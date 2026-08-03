@@ -21,6 +21,7 @@ import dispyro
 
 from .filters import Filter
 from .types import AnyFilter, Callback, PackedRawUpdate, Update
+from .types.contexts import UpdateContext
 from .types.signatures import (
     CallbackQueryHandlerCallback,
     ChatMemberUpdatedHandlerCallback,
@@ -36,8 +37,10 @@ from .types.signatures import (
 )
 from .utils import safe_call
 
+
 def default_priority_factory(handler: "Handler", router: "dispyro.Router") -> int:
     return 1
+
 
 class Handler:
     _priority_factory: PriorityFactory | None = None
@@ -66,25 +69,16 @@ class Handler:
         self._router = router
         self._filters: Filter = Filter() & filters
 
-        # This field indicates whether handler was called during handling current
-        # update. Defaults to `False`. Set to `False` on cleanup (after finishing
-        # update processing).
-        self._triggered: bool = False
-
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: Update,
-        **deps,
-    ) -> None:
-        filters_passed = await self._filters(client=client, update=update, **deps)
+    async def __call__(self, context: UpdateContext) -> bool:
+        filters_passed = await self._filters(context=context)
 
         if not filters_passed:
-            return
+            return False
 
-        await self.callback(client, update, **deps) # pyright: ignore [reportArgumentType]
-        self._triggered = True
+        await self.callback(  # pyright: ignore [reportArgumentType]
+            context.client, context.update, **context.data
+        )
+        return True
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} `{self._name}`"
@@ -110,15 +104,6 @@ class CallbackQueryHandler(Handler):
             filters=filters,
         )
 
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: types.CallbackQuery,
-        **deps,
-    ) -> None:
-        await super().__call__(client=client, update=update, **deps)
-
 
 class ChatMemberUpdatedHandler(Handler):
     callback: ChatMemberUpdatedHandlerCallback
@@ -139,15 +124,6 @@ class ChatMemberUpdatedHandler(Handler):
             priority=priority,
             filters=filters,
         )
-
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: types.ChatMemberUpdated,
-        **deps,
-    ) -> None:
-        await super().__call__(client=client, update=update, **deps)
 
 
 class ChosenInlineResultHandler(Handler):
@@ -170,15 +146,6 @@ class ChosenInlineResultHandler(Handler):
             filters=filters,
         )
 
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: types.ChosenInlineResult,
-        **deps,
-    ) -> None:
-        await super().__call__(client=client, update=update, **deps)
-
 
 class DeletedMessagesHandler(Handler):
     callback: DeletedMessagesHandlerCallback
@@ -199,15 +166,6 @@ class DeletedMessagesHandler(Handler):
             priority=priority,
             filters=filters,
         )
-
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: List[types.Message],
-        **deps,
-    ) -> None:
-        await super().__call__(client=client, update=update, **deps)
 
 
 class EditedMessageHandler(Handler):
@@ -230,15 +188,6 @@ class EditedMessageHandler(Handler):
             filters=filters,
         )
 
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: types.Message,
-        **deps,
-    ) -> None:
-        await super().__call__(client=client, update=update, **deps)
-
 
 class InlineQueryHandler(Handler):
     callback: InlineQueryHandlerCallback
@@ -259,15 +208,6 @@ class InlineQueryHandler(Handler):
             priority=priority,
             filters=filters,
         )
-
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: types.InlineQuery,
-        **deps,
-    ) -> None:
-        await super().__call__(client=client, update=update, **deps)
 
 
 class MessageHandler(Handler):
@@ -290,15 +230,6 @@ class MessageHandler(Handler):
             filters=filters,
         )
 
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: types.Message,
-        **deps,
-    ) -> None:
-        await super().__call__(client=client, update=update, **deps)
-
 
 class PollHandler(Handler):
     callback: PollHandlerCallback
@@ -319,15 +250,6 @@ class PollHandler(Handler):
             priority=priority,
             filters=filters,
         )
-
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: types.Poll,
-        **deps,
-    ) -> None:
-        await super().__call__(client=client, update=update, **deps)
 
 
 class RawUpdateHandler(Handler):
@@ -350,15 +272,6 @@ class RawUpdateHandler(Handler):
             filters=filters,
         )
 
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: PackedRawUpdate,
-        **deps,
-    ) -> None:
-        await super().__call__(client=client, update=update, **deps)
-
 
 class UserStatusHandler(Handler):
     callback: UserStatusHandlerCallback
@@ -379,12 +292,3 @@ class UserStatusHandler(Handler):
             priority=priority,
             filters=filters,
         )
-
-    async def __call__(
-        self,
-        *,
-        client: Client,
-        update: types.User,
-        **deps,
-    ) -> None:
-        await super().__call__(client=client, update=update, **deps)

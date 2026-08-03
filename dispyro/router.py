@@ -43,7 +43,6 @@ class Router:
         self.raw_update = RawUpdateHandlersHolder(router=self)
         self.user_status = UserStatusHandlersHolder(router=self)
 
-        self._triggered: bool = False
         self._sub_routers: List["Router"] = []
         self._parent_router: Optional["Router"] = None
 
@@ -115,12 +114,6 @@ class Router:
 
         router._parent_router = self
         self._sub_routers.append(router)
-
-    def cleanup(self) -> None:
-        self._triggered = False
-
-        for handler in self.all_handlers:
-            handler._triggered = False
 
     async def feed_update(
         self,

@@ -38,7 +38,7 @@ class BaseMiddleware:
             self.apply = apply
 
     async def handle(self, context: UpdateContext) -> None:
-        middleware_context = context.middlewares_context[self]
+        middleware_context = context._middlewares_context[self]
         state = middleware_context.state
 
         if state is MiddlewareState.UNACTIVE:

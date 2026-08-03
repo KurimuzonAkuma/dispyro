@@ -1,7 +1,13 @@
 import inspect
 from functools import wraps
 from inspect import Parameter
-from typing import Any, Callable, Dict, List, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, TypeVar
+
+from pyrogram import Client
+from pyrogram.filters import Filter as PyrogramFilter
+
+if TYPE_CHECKING:
+    from .filters import Filter as DispyroFilter
 
 ReturnType = TypeVar("ReturnType")
 
@@ -56,3 +62,16 @@ def safe_call(callable: Callable[..., ReturnType]) -> Callable[..., ReturnType]:
         return callable(*args, **needed_kwargs)
 
     return wrapper
+
+
+def adapt_pyrogram_filter(pyrogram_filter: PyrogramFilter) -> "DispyroFilter":
+    """Wrap a Pyrogram filter into the dispyro Filter interface so it can be
+    called with `context: UpdateContext` like all other dispyro filters."""
+    # Local import to avoid circular dependency: filters → utils → filters.
+    from .filters import Filter  # noqa: PLC0415
+    from .types import Update
+
+    async def callback(client: Client, update: Update) -> bool:
+        return await pyrogram_filter(client, update)  # pyright: ignore [reportReturnType]
+
+    return Filter(callback=callback)

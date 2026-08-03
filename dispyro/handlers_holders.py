@@ -69,15 +69,11 @@ class HandlersHolder(ProcessingContextHolder):
         return decorator
 
     async def feed_update(self, context: UpdateContext, run_logic: RunLogic) -> bool:
-        client = context.client
-        update = context.update
-        deps = context.data
-
         with suppress(InterruptProcessing):
             for middleware in self.outer_middlewares:
                 await middleware.handle(context=context)
 
-            filters_passed = await self.filters(client, update, **deps)
+            filters_passed = await self.filters(context=context)
 
             if not filters_passed:
                 for middleware in reversed(self.outer_middlewares):
@@ -88,30 +84,21 @@ class HandlersHolder(ProcessingContextHolder):
             for middleware in self.middlewares:
                 await middleware.handle(context=context)
 
-            self._router._triggered = True
+            context.router_triggered = True
 
             result = False
 
             handlers = sorted(self.handlers, key=lambda x: x._priority)
             for handler in handlers:
-                await handler(
-                    client=context.client, update=context.update, **context.data  # pyright: ignore [reportArgumentType]
-                )
+                triggered = await handler(context=context)
 
-                if handler._triggered and run_logic in {
+                if triggered and run_logic in {
                     RunLogic.ONE_RUN_PER_ROUTER,
                     RunLogic.ONE_RUN_PER_EVENT,
                 }:
+                    context.handler_triggered = True
                     result = True
                     break
-
-            # result = any(handler._triggered for handler in handlers)
-
-            # for middleware in reversed(self.middlewares):
-            #     await middleware.handle(context=context)
-
-            # for middleware in reversed(self.outer_middlewares):
-            #     await middleware.handle(context=context)
 
             return result
 

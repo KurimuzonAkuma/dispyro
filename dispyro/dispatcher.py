@@ -128,10 +128,6 @@ class Dispatcher:
     def add_routers(self, *routers: Router):
         self.routers.extend(routers)
 
-    def cleanup(self) -> None:
-        for router in self.routers:
-            router.cleanup()
-
     async def feed_update(self, client: Client, update: Update, handler_type: Type[PyrogramHandler]) -> None:
         processing_context = self.processing_context_correlation[handler_type]
         context = UpdateContext(client=client, update=update, data=self._deps)
@@ -139,7 +135,7 @@ class Dispatcher:
         for middleware in processing_context.outer_middlewares:
             await middleware.handle(context=context)
 
-        filters_passed = await processing_context.filters(client, update, **self._deps)
+        filters_passed = await processing_context.filters(context=context)
 
         if not filters_passed:
             return
@@ -153,15 +149,12 @@ class Dispatcher:
             if self._run_logic is RunLogic.ONE_RUN_PER_EVENT and result:
                 break
 
-        self.cleanup()
-
     async def start(
         self,
         *clients: Client,
         ignore_preparation: Optional[bool] = None,
         only_start: bool = False,
     ) -> None:
-        self.cleanup()
 
         if ignore_preparation is None:
             ignore_preparation = self._ignore_preparation

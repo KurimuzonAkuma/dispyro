@@ -23,4 +23,9 @@ class UpdateContext:
     client: Client
     update: Update
     data: Dict[str, Any]
-    middlewares_context: MiddlewaresContext = field(default_factory=lambda: defaultdict(MiddlewareContext))
+    _middlewares_context: MiddlewaresContext = field(default_factory=lambda: defaultdict(MiddlewareContext))
+    # Indicates whether any handler was triggered during processing of this
+    # specific update. Stored here (not on Handler/Router instances) to avoid
+    # state sharing across concurrent update processing tasks.
+    handler_triggered: bool = False
+    router_triggered: bool = False
