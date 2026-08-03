@@ -2,8 +2,9 @@ from pyrogram import Client
 from pyrogram.filters import Filter as PyrogramFilter
 
 from .types import AnyFilter, Update
+from .types.contexts import UpdateContext
 from .types.signatures import FilterCallback
-from .utils import safe_call
+from .utils import adapt_pyrogram_filter, safe_call
 
 
 class Filter:
@@ -14,12 +15,12 @@ class Filter:
     async def _default_callback(self, client: Client, update: Update):
         return True
 
-    def __init__(self, callback: FilterCallback = None):
+    def __init__(self, callback: FilterCallback | None = None):
         self._unwrapped_callback = callback
         self._callback: FilterCallback = safe_call(callback or self._default_callback)
 
-    async def __call__(self, client: Client, update: Update, **deps) -> bool:
-        return await self._callback(client, update, **deps)
+    async def __call__(self, context: UpdateContext) -> bool:
+        return await self._callback(context.client, context.update, **context.data)
 
     def __invert__(self) -> "InvertedFilter":
         return InvertedFilter(callback=self._unwrapped_callback)
@@ -32,31 +33,32 @@ class Filter:
 
 
 class InvertedFilter(Filter):
-    async def __call__(self, client: Client, update: Update, **deps) -> bool:
-        return not await super().__call__(client, update, **deps)
+    async def __call__(self, context: UpdateContext) -> bool:
+        return not await super().__call__(context=context)
 
     def __invert__(self) -> Filter:
         return Filter(callback=self._unwrapped_callback)
 
 
+
 class AndFilter(Filter):
     def __init__(self, left: AnyFilter, right: AnyFilter):
         if isinstance(left, PyrogramFilter):
-            left = safe_call(callable=left)
+            left = adapt_pyrogram_filter(left)
 
         if isinstance(right, PyrogramFilter):
-            right = safe_call(callable=right)
+            right = adapt_pyrogram_filter(right)
 
-        self._left: AnyFilter = left
-        self._right: AnyFilter = right
+        self._left: Filter = left  # pyright: ignore [reportAssignmentType]
+        self._right: Filter = right  # pyright: ignore [reportAssignmentType]
 
-    async def __call__(self, client: Client, update: Update, **deps) -> bool:
-        left_value = await self._left(client, update, **deps)
+    async def __call__(self, context: UpdateContext) -> bool:
+        left_value = await self._left(context=context)
 
         if not left_value:
             return False
 
-        right_value = await self._right(client, update, **deps)
+        right_value = await self._right(context=context)
 
         return left_value and right_value
 
@@ -64,20 +66,21 @@ class AndFilter(Filter):
 class OrFilter(Filter):
     def __init__(self, left: AnyFilter, right: AnyFilter):
         if isinstance(left, PyrogramFilter):
-            left = safe_call(callable=left)
+            left = adapt_pyrogram_filter(left)
 
         if isinstance(right, PyrogramFilter):
-            right = safe_call(callable=right)
+            right = adapt_pyrogram_filter(right)
 
-        self._left: AnyFilter = left
-        self._right: AnyFilter = right
+        self._left: Filter = left  # pyright: ignore [reportAssignmentType]
+        self._right: Filter = right  # pyright: ignore [reportAssignmentType]
 
-    async def __call__(self, client: Client, update: Update, **deps) -> bool:
-        left_value = await self._left(client, update, **deps)
+    async def __call__(self, context: UpdateContext) -> bool:
+        left_value = await self._left(context=context)
 
         if left_value:
             return True
 
-        right_value = await self._right(client, update, **deps)
+        right_value = await self._right(context=context)
 
         return left_value or right_value
+
