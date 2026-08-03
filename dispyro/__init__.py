@@ -1,6 +1,7 @@
-from . import filters, handlers, types, utils, middlewares
+from . import filters, handlers, types, utils, middlewares, fsm
 from .dispatcher import Dispatcher, RunLogic
 from .filters import Filter
+from .fsm import FSMContext, FSMMiddleware, MemoryStorage, State, StateFilter, StatesGroup
 from .router import Router
 from .types import PackedRawUpdate
 
@@ -17,4 +18,11 @@ __all__ = (
     "handlers",
     "PackedRawUpdate",
     "middlewares",
+    "fsm",
+    "State",
+    "StatesGroup",
+    "FSMContext",
+    "FSMMiddleware",
+    "StateFilter",
+    "MemoryStorage",
 )

@@ -6,6 +6,9 @@ from pyrogram.handlers.handler import Handler as PyrogramHandler
 from pyrogram.raw import base, core
 
 from .enums import RunLogic
+from .fsm.middleware import FSMMiddleware
+from .fsm.storages import MemoryStorage, StateStorage
+from .fsm.strategy import FSMStrategy
 from .processing_context_holder import ProcessingContextHolder
 from .router import Router
 from .types import PackedRawUpdate, Update
@@ -27,6 +30,9 @@ class Dispatcher:
         ignore_preparation: bool = False,
         clear_on_prepare: bool = True,
         run_logic: RunLogic = RunLogic.ONE_RUN_PER_EVENT,
+        fsm_storage: Optional[StateStorage] = None,
+        fsm_strategy: FSMStrategy = FSMStrategy.USER_IN_CHAT,
+        disable_fsm: bool = False,
         **deps,
     ):
         self.routers: List[Router] = []
@@ -48,6 +54,12 @@ class Dispatcher:
         self._clear_on_prepare = clear_on_prepare
         self._run_logic = run_logic
 
+        if not disable_fsm:
+            storage = fsm_storage or MemoryStorage()
+            fsm_middleware = FSMMiddleware(storage=storage, strategy=fsm_strategy)
+            for holder in self._all_holders:
+                holder.outer_middleware(fsm_middleware)
+
         if ignore_preparation:
             self._clients = list(clients)
 
@@ -55,6 +67,21 @@ class Dispatcher:
             for client in clients:
                 client = self.prepare_client(client=client, clear_handlers=clear_on_prepare)
                 self._clients.append(client)
+
+    @property
+    def _all_holders(self) -> List[ProcessingContextHolder]:
+        return [
+            self.callback_query,
+            self.chat_member_updated,
+            self.chosen_inline_result,
+            self.deleted_messages,
+            self.edited_message,
+            self.inline_query,
+            self.message,
+            self.poll,
+            self.raw_update,
+            self.user_status,
+        ]
 
     @cached_property
     def processing_context_correlation(self) -> Dict[Type[PyrogramHandler], ProcessingContextHolder]:
