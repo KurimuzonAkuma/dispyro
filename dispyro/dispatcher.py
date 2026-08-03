@@ -196,7 +196,7 @@ class Dispatcher:
 
         clients_list = self._clients + clients_list
 
-        for client in clients:
+        for client in clients_list:
             if not client.is_connected:
                 await client.start()
 
