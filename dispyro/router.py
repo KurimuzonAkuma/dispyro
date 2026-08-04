@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 from functools import cached_property
-from typing import Dict, List, Optional, Type
+from typing import TYPE_CHECKING
 
 from pyrogram import handlers
 from pyrogram.handlers.handler import Handler as PyrogramHandler
 
-import dispyro
+if TYPE_CHECKING:
+    import dispyro
 
 from .handlers import Handler
 from .handlers_holders import (
@@ -29,7 +32,7 @@ class Router:
     To put things to work, must be attached to `Dispatcher`.
     """
 
-    def __init__(self, name: Optional[str] = None):
+    def __init__(self, name: str | None = None) -> None:
         self._name = name or "unnamed_router"
 
         self.callback_query = CallbackQueryHandlersHolder(router=self)
@@ -43,14 +46,14 @@ class Router:
         self.raw_update = RawUpdateHandlersHolder(router=self)
         self.user_status = UserStatusHandlersHolder(router=self)
 
-        self._sub_routers: List["Router"] = []
-        self._parent_router: Optional["Router"] = None
+        self._sub_routers: list[Router] = []
+        self._parent_router: Router | None = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} `{self._name}`"
 
     @property
-    def all_handlers(self) -> List[Handler]:
+    def all_handlers(self) -> list[Handler]:
         return [
             *self.callback_query.handlers,
             *self.chat_member_updated.handlers,
@@ -65,7 +68,7 @@ class Router:
         ]
 
     @cached_property
-    def handlers_correlation(self) -> Dict[Type[PyrogramHandler], HandlersHolder]:
+    def handlers_correlation(self) -> dict[type[PyrogramHandler], HandlersHolder]:
         return {
             handlers.CallbackQueryHandler: self.callback_query,
             handlers.ChatMemberUpdatedHandler: self.chat_member_updated,
@@ -79,11 +82,11 @@ class Router:
             handlers.UserStatusHandler: self.user_status,
         }
 
-    def add_routers(self, *routers: "Router") -> None:
+    def add_routers(self, *routers: Router) -> None:
         for router in routers:
             self.add_router(router=router)
 
-    def add_router(self, router: "Router") -> None:
+    def add_router(self, router: Router) -> None:
         if router._parent_router is not None:
             raise ValueError("Router already has a parent")
 
@@ -101,7 +104,7 @@ class Router:
             if parent is None:
                 break
 
-            elif parent is router:
+            if parent is router:
                 raise RecursionError("Circular reference detected")
 
             parent = parent._parent_router
@@ -118,8 +121,8 @@ class Router:
     async def feed_update(
         self,
         context: UpdateContext,
-        dispatcher: "dispyro.Dispatcher",
-        handler_type: Type[PyrogramHandler],
+        dispatcher: dispyro.Dispatcher,
+        handler_type: type[PyrogramHandler],
     ) -> bool:
         run_logic = dispatcher._run_logic
 

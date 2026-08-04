@@ -1,7 +1,6 @@
-from typing import Optional, Union
+from dispyro.filters import Filter
+from dispyro.types.contexts import UpdateContext
 
-from ..filters import Filter
-from ..types.contexts import UpdateContext
 from .context import FSMContext
 from .states import State
 
@@ -21,12 +20,12 @@ class StateFilter(Filter):
         async def handler(client, message): ...
     """
 
-    def __init__(self, *states: Union[State, str, None]) -> None:
-        self._states: tuple[Union[State, str, None], ...] = states
-        self._states_as_str: set[Optional[str]] = {str(s) if s is not None else None for s in states}
+    def __init__(self, *states: State | str | None) -> None:
+        self._states: tuple[State | str | None, ...] = states
+        self._states_as_str: set[str | None] = {str(s) if s is not None else None for s in states}
 
     async def __call__(self, context: UpdateContext) -> bool:
-        fsm: Optional[FSMContext] = context.data.get("state")
+        fsm: FSMContext | None = context.data.get("state")
 
         if fsm is None:
             # Update has no identifiable sender — match only if None is listed.

@@ -1,3 +1,3 @@
-from typing import Callable, Awaitable
+from collections.abc import Awaitable, Callable
 
 FilterCallback = Callable[..., Awaitable[bool]]

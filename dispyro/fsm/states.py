@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
-from ..filters import Filter
-from ..types.contexts import UpdateContext
+from dispyro.filters import Filter
+from dispyro.types.contexts import UpdateContext
 
 if TYPE_CHECKING:
     from .context import FSMContext
@@ -22,7 +24,7 @@ class State(Filter):
             await state.set(Form.waiting_phone)
     """
 
-    _group: "type[StatesGroup]"
+    _group: type[StatesGroup]
     _name: str
 
     def __init__(self) -> None:
@@ -31,9 +33,11 @@ class State(Filter):
         pass
 
     async def __call__(self, context: UpdateContext) -> bool:
-        fsm: "FSMContext | None" = context.data.get("state")
+        fsm: FSMContext | None = context.data.get("state")
+
         if fsm is None:
             return False
+
         current = await fsm.get()
         return current == str(self)
 

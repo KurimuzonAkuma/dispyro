@@ -16,18 +16,18 @@ from .handler_callback import (
 from .priority_factory import PriorityFactory
 
 __all__ = (
-    "FilterCallback",
+    "Callback",
     "CallbackQueryHandlerCallback",
     "ChatMemberUpdatedHandlerCallback",
     "ChosenInlineResultHandlerCallback",
+    "Decorator",
     "DeletedMessagesHandlerCallback",
     "EditedMessageHandlerCallback",
+    "FilterCallback",
     "InlineQueryHandlerCallback",
     "MessageHandlerCallback",
     "PollHandlerCallback",
+    "PriorityFactory",
     "RawUpdateHandlerCallback",
     "UserStatusHandlerCallback",
-    "PriorityFactory",
-    "Callback",
-    "Decorator",
 )

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # This file defines custom handlers definitions that is used instead of
 # original Pyrogram handlers. Unlike original handlers, customs are DI-friendly,
 # providing ability to use dependency injection with ease.
@@ -12,15 +14,12 @@
 # `priority_factory`. This function must take 2 arguments
 # (handler itself and `router` that registering this handler) and return
 # positive `int`.
-
-from typing import List, Optional
-
-from pyrogram import Client, types
+from typing import Generic, TypeVar
 
 import dispyro
 
 from .filters import Filter
-from .types import AnyFilter, Callback, PackedRawUpdate, Update
+from .types import AnyFilter, Callback
 from .types.contexts import UpdateContext
 from .types.signatures import (
     CallbackQueryHandlerCallback,
@@ -31,18 +30,20 @@ from .types.signatures import (
     InlineQueryHandlerCallback,
     MessageHandlerCallback,
     PollHandlerCallback,
+    PriorityFactory,
     RawUpdateHandlerCallback,
     UserStatusHandlerCallback,
-    PriorityFactory,
 )
 from .utils import safe_call
 
+CallbackT = TypeVar("CallbackT", bound=Callback)
 
-def default_priority_factory(handler: "Handler", router: "dispyro.Router") -> int:
+
+def default_priority_factory(_: Handler, __: dispyro.Router) -> int:
     return 1
 
 
-class Handler:
+class Handler(Generic[CallbackT]):
     _priority_factory: PriorityFactory | None = None
 
     @classmethod
@@ -52,12 +53,12 @@ class Handler:
     def __init__(
         self,
         *,
-        callback: Callback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
+        callback: CallbackT,
+        router: dispyro.Router,
+        name: str | None = None,
+        priority: int | None = None,
         filters: AnyFilter = Filter(),
-    ):
+    ) -> None:
         if priority is not None:
             self._priority = priority
         else:
@@ -65,7 +66,7 @@ class Handler:
             self._priority = factory(self, router)
 
         self._name = name or "unnamed_handler"
-        self.callback: Callback = safe_call(callable=callback)
+        self.callback: CallbackT = safe_call(callable=callback)  # pyright: ignore [reportAttributeAccessIssue]
         self._router = router
         self._filters: Filter = Filter() & filters
 
@@ -75,220 +76,48 @@ class Handler:
         if not filters_passed:
             return False
 
-        await self.callback(  # pyright: ignore [reportArgumentType]
-            context.client, context.update, **context.data
-        )
+        await self.callback(context.client, context.update, **context.data)  # pyright: ignore [reportArgumentType]
         return True
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} `{self._name}`"
 
 
-class CallbackQueryHandler(Handler):
-    callback: CallbackQueryHandlerCallback
-
-    def __init__(
-        self,
-        *,
-        callback: CallbackQueryHandlerCallback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
-        filters: AnyFilter = Filter(),
-    ):
-        super().__init__(
-            callback=callback,
-            router=router,
-            name=name,
-            priority=priority,
-            filters=filters,
-        )
+class CallbackQueryHandler(Handler[CallbackQueryHandlerCallback]):
+    pass
 
 
-class ChatMemberUpdatedHandler(Handler):
-    callback: ChatMemberUpdatedHandlerCallback
-
-    def __init__(
-        self,
-        *,
-        callback: ChatMemberUpdatedHandlerCallback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
-        filters: AnyFilter = Filter(),
-    ):
-        super().__init__(
-            callback=callback,
-            router=router,
-            name=name,
-            priority=priority,
-            filters=filters,
-        )
+class ChatMemberUpdatedHandler(Handler[ChatMemberUpdatedHandlerCallback]):
+    pass
 
 
-class ChosenInlineResultHandler(Handler):
-    callback: ChosenInlineResultHandlerCallback
-
-    def __init__(
-        self,
-        *,
-        callback: ChosenInlineResultHandlerCallback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
-        filters: AnyFilter = Filter(),
-    ):
-        super().__init__(
-            callback=callback,
-            router=router,
-            name=name,
-            priority=priority,
-            filters=filters,
-        )
+class ChosenInlineResultHandler(Handler[ChosenInlineResultHandlerCallback]):
+    pass
 
 
-class DeletedMessagesHandler(Handler):
-    callback: DeletedMessagesHandlerCallback
-
-    def __init__(
-        self,
-        *,
-        callback: DeletedMessagesHandlerCallback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
-        filters: AnyFilter = Filter(),
-    ):
-        super().__init__(
-            callback=callback,
-            router=router,
-            name=name,
-            priority=priority,
-            filters=filters,
-        )
+class DeletedMessagesHandler(Handler[DeletedMessagesHandlerCallback]):
+    pass
 
 
-class EditedMessageHandler(Handler):
-    callback: EditedMessageHandlerCallback
-
-    def __init__(
-        self,
-        *,
-        callback: EditedMessageHandlerCallback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
-        filters: AnyFilter = Filter(),
-    ):
-        super().__init__(
-            callback=callback,
-            router=router,
-            name=name,
-            priority=priority,
-            filters=filters,
-        )
+class EditedMessageHandler(Handler[EditedMessageHandlerCallback]):
+    pass
 
 
-class InlineQueryHandler(Handler):
-    callback: InlineQueryHandlerCallback
-
-    def __init__(
-        self,
-        *,
-        callback: InlineQueryHandlerCallback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
-        filters: AnyFilter = Filter(),
-    ):
-        super().__init__(
-            callback=callback,
-            router=router,
-            name=name,
-            priority=priority,
-            filters=filters,
-        )
+class InlineQueryHandler(Handler[InlineQueryHandlerCallback]):
+    pass
 
 
-class MessageHandler(Handler):
-    callback: MessageHandlerCallback
-
-    def __init__(
-        self,
-        *,
-        callback: MessageHandlerCallback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
-        filters: AnyFilter = Filter(),
-    ):
-        super().__init__(
-            callback=callback,
-            router=router,
-            name=name,
-            priority=priority,
-            filters=filters,
-        )
+class MessageHandler(Handler[MessageHandlerCallback]):
+    pass
 
 
-class PollHandler(Handler):
-    callback: PollHandlerCallback
-
-    def __init__(
-        self,
-        *,
-        callback: PollHandlerCallback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
-        filters: AnyFilter = Filter(),
-    ):
-        super().__init__(
-            callback=callback,
-            router=router,
-            name=name,
-            priority=priority,
-            filters=filters,
-        )
+class PollHandler(Handler[PollHandlerCallback]):
+    pass
 
 
-class RawUpdateHandler(Handler):
-    callback: RawUpdateHandlerCallback
-
-    def __init__(
-        self,
-        *,
-        callback: RawUpdateHandlerCallback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
-        filters: AnyFilter = Filter(),
-    ):
-        super().__init__(
-            callback=callback,
-            router=router,
-            name=name,
-            priority=priority,
-            filters=filters,
-        )
+class RawUpdateHandler(Handler[RawUpdateHandlerCallback]):
+    pass
 
 
-class UserStatusHandler(Handler):
-    callback: UserStatusHandlerCallback
-
-    def __init__(
-        self,
-        *,
-        callback: UserStatusHandlerCallback,
-        router: "dispyro.Router",
-        name: Optional[str] = None,
-        priority: Optional[int] = None,
-        filters: AnyFilter = Filter(),
-    ):
-        super().__init__(
-            callback=callback,
-            router=router,
-            name=name,
-            priority=priority,
-            filters=filters,
-        )
+class UserStatusHandler(Handler[UserStatusHandlerCallback]):
+    pass

@@ -1,3 +1,6 @@
+
+import contextlib
+
 from .context import FSMContext
 from .filters import StateFilter
 from .middleware import FSMMiddleware, extract_key, resolve_storage_key
@@ -5,22 +8,20 @@ from .states import State, StatesGroup
 from .storages import MemoryStorage, StateStorage, StorageKey
 from .strategy import FSMStrategy
 
-try:
+with contextlib.suppress(ImportError):
     from .storages import RedisStorage
-except ImportError:
-    pass  # redis package not installed
 
 __all__ = (
-    "StateStorage",
-    "StorageKey",
+    "FSMContext",
+    "FSMMiddleware",
+    "FSMStrategy",
     "MemoryStorage",
     "RedisStorage",
     "State",
-    "StatesGroup",
-    "FSMContext",
-    "FSMMiddleware",
     "StateFilter",
-    "FSMStrategy",
+    "StateStorage",
+    "StatesGroup",
+    "StorageKey",
     "extract_key",
     "resolve_storage_key",
 )

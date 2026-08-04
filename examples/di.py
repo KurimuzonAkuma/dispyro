@@ -1,5 +1,4 @@
 import asyncio
-from typing import List
 
 from pyrogram import Client, filters, types
 
@@ -10,30 +9,26 @@ router.message.filter(filters.me)  # processing only messages from account itsel
 
 
 @router.message(filters.command("numbers", prefixes="."))
-async def handler(_, message: types.Message, numbers: List[int]):
+async def handler(_: Client, message: types.Message, numbers: list[int]):
     formatted_numbers = ", ".join(map(str, numbers))
     text = f"Entered numbers: {formatted_numbers}"
     await message.edit_text(text=text)
 
 
 @router.message(filters.command("add", prefixes="."))
-async def handler(_, message: types.Message, numbers: List[int]):
+async def handler(_: Client, message: types.Message, numbers: list[int]):
     values = message.command[1:]
 
     if not values:
         await message.delete()
         return
 
-    for value in values:
-        if value.isdigit():
-            value = int(value)
-            numbers.append(value)
-
+    numbers.extend(int(value) for value in values if value.isdigit())
     await message.edit_text(text="✅ Numbers added")
 
 
 @router.message(filters.command("clear", prefixes="."))
-async def handler(_, message: types.Message, numbers: List[int]):
+async def handler(_: Client, message: types.Message, numbers: list[int]):
     numbers.clear()
 
     await message.edit_text(text="✅ Numbers list cleared")

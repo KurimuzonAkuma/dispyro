@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Union
 
 import pyrogram
 from pyrogram.types import CallbackQuery, ChatMemberUpdated, ChosenInlineResult, InlineQuery, Message, Poll, User
@@ -32,31 +32,31 @@ Handler = Union[
     "dispyro.handlers.RawUpdateHandler",
 ]
 
-Callback = Union[
-    CallbackQueryHandlerCallback,
-    ChatMemberUpdatedHandlerCallback,
-    ChosenInlineResultHandlerCallback,
-    DeletedMessagesHandlerCallback,
-    EditedMessageHandlerCallback,
-    InlineQueryHandlerCallback,
-    MessageHandlerCallback,
-    PollHandlerCallback,
-    UserStatusHandlerCallback,
-    RawUpdateHandlerCallback,
-]
+Callback = (
+    CallbackQueryHandlerCallback
+    | ChatMemberUpdatedHandlerCallback
+    | ChosenInlineResultHandlerCallback
+    | DeletedMessagesHandlerCallback
+    | EditedMessageHandlerCallback
+    | InlineQueryHandlerCallback
+    | MessageHandlerCallback
+    | PollHandlerCallback
+    | UserStatusHandlerCallback
+    | RawUpdateHandlerCallback
+)
 
-Update = Union[
-    CallbackQuery,
-    ChatMemberUpdated,
-    ChosenInlineResult,
-    Message,
-    List[Message],
-    InlineQuery,
-    Poll,
-    User,
-    PackedRawUpdate,
-]
+Update = (
+    CallbackQuery
+    | ChatMemberUpdated
+    | ChosenInlineResult
+    | Message
+    | list[Message]
+    | InlineQuery
+    | Poll
+    | User
+    | PackedRawUpdate
+)
 
 AnyFilter = Union[pyrogram.filters.Filter, "dispyro.filters.Filter"]
 
-__all__ = ("Handler", "Callback", "Update", "AnyFilter")
+__all__ = ("AnyFilter", "Callback", "Handler", "Update")

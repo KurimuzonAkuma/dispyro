@@ -33,14 +33,13 @@ class MemoryStorage(StateStorage):
 
 
 class RedisStorage(StateStorage):
-    def __init__(self, redis, ttl: int | None = None) -> None:
+    def __init__(self, redis, ttl: int | None = None) -> None:  # noqa: ANN001
         try:
-            import redis as redis_pkg  # noqa: F401
+            import redis as _  # noqa: F401, PLC0415
         except ImportError:
             raise ImportError(
-                "redis package is required for RedisStorage. "
-                "Install it with: pip install dispyro[redis]"
-            )
+                "redis package is required for RedisStorage. Install it with: pip install dispyro[redis]",
+            ) from None
 
         self._redis = redis
         self._ttl = ttl

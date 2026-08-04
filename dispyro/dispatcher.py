@@ -1,5 +1,6 @@
+from collections.abc import Awaitable, Callable
 from functools import cached_property
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Type, Union
+from typing import Any
 
 from pyrogram import Client, handlers, idle
 from pyrogram.handlers.handler import Handler as PyrogramHandler
@@ -15,8 +16,8 @@ from .types import PackedRawUpdate, Update
 from .types.contexts import UpdateContext
 
 PyrogramHandlerCallback = Callable[[Client, Update], Awaitable[Any]]
-PyrogramRawHandlerCallback = Callable[[Client, core.TLObject, Dict[int, base.User], Dict[int, base.Chat]], Awaitable]
-AnyPyrogramHandlerCallback = Union[PyrogramHandlerCallback, PyrogramRawHandlerCallback]
+PyrogramRawHandlerCallback = Callable[[Client, core.TLObject, dict[int, base.User], dict[int, base.Chat]], Awaitable]
+AnyPyrogramHandlerCallback = PyrogramHandlerCallback | PyrogramRawHandlerCallback
 
 
 class Dispatcher:
@@ -30,14 +31,14 @@ class Dispatcher:
         ignore_preparation: bool = False,
         clear_on_prepare: bool = True,
         run_logic: RunLogic = RunLogic.ONE_RUN_PER_EVENT,
-        fsm_storage: Optional[StateStorage] = None,
+        fsm_storage: StateStorage | None = None,
         fsm_strategy: FSMStrategy = FSMStrategy.USER_IN_CHAT,
         disable_fsm: bool = False,
         **deps,
-    ):
-        self.routers: List[Router] = []
-        self._clients: List[Client] = []
-        self._deps: Dict[str, Any] = deps
+    ) -> None:
+        self.routers: list[Router] = []
+        self._clients: list[Client] = []
+        self._deps: dict[str, Any] = deps
 
         self.callback_query = ProcessingContextHolder()
         self.chat_member_updated = ProcessingContextHolder()
@@ -65,11 +66,11 @@ class Dispatcher:
 
         else:
             for client in clients:
-                client = self.prepare_client(client=client, clear_handlers=clear_on_prepare)
-                self._clients.append(client)
+                processed_client = self.prepare_client(client=client, clear_handlers=clear_on_prepare)
+                self._clients.append(processed_client)
 
     @property
-    def _all_holders(self) -> List[ProcessingContextHolder]:
+    def _all_holders(self) -> list[ProcessingContextHolder]:
         return [
             self.callback_query,
             self.chat_member_updated,
@@ -84,7 +85,7 @@ class Dispatcher:
         ]
 
     @cached_property
-    def processing_context_correlation(self) -> Dict[Type[PyrogramHandler], ProcessingContextHolder]:
+    def processing_context_correlation(self) -> dict[type[PyrogramHandler], ProcessingContextHolder]:
         return {
             handlers.CallbackQueryHandler: self.callback_query,
             handlers.ChatMemberUpdatedHandler: self.chat_member_updated,
@@ -98,27 +99,27 @@ class Dispatcher:
             handlers.UserStatusHandler: self.user_status,
         }
 
-    def _make_handler(self, handler_type: Type[PyrogramHandler]) -> AnyPyrogramHandlerCallback:
+    def _make_handler(self, handler_type: type[PyrogramHandler]) -> AnyPyrogramHandlerCallback:
         if handler_type is handlers.RawUpdateHandler:
 
             async def handler(
                 client: Client,
                 update: core.TLObject,
-                users: Dict[int, base.User],
-                chats: Dict[int, base.Chat],
-            ):
+                users: dict[int, base.User],
+                chats: dict[int, base.Chat],
+            ) -> None:
                 packed_update = PackedRawUpdate(update=update, users=users, chats=chats)
                 await self.feed_update(client=client, update=packed_update, handler_type=handler_type)
 
         else:
 
-            async def handler(client: Client, update: Update):
+            async def handler(client: Client, update: Update) -> None:
                 await self.feed_update(client=client, update=update, handler_type=handler_type)
 
         return handler
 
-    def prepare_client(self, client: Client, clear_handlers: bool = True) -> Client:
-        handler_types: List[Type[PyrogramHandler]] = [
+    def prepare_client(self, client: Client, *, clear_handlers: bool = True) -> Client:
+        handler_types: list[type[PyrogramHandler]] = [
             handlers.CallbackQueryHandler,
             handlers.ChatMemberUpdatedHandler,
             handlers.ChosenInlineResultHandler,
@@ -155,7 +156,7 @@ class Dispatcher:
     def add_routers(self, *routers: Router):
         self.routers.extend(routers)
 
-    async def feed_update(self, client: Client, update: Update, handler_type: Type[PyrogramHandler]) -> None:
+    async def feed_update(self, client: Client, update: Update, handler_type: type[PyrogramHandler]) -> None:
         processing_context = self.processing_context_correlation[handler_type]
         context = UpdateContext(client=client, update=update, data=self._deps)
 
@@ -179,7 +180,7 @@ class Dispatcher:
     async def start(
         self,
         *clients: Client,
-        ignore_preparation: Optional[bool] = None,
+        ignore_preparation: bool | None = None,
         only_start: bool = False,
     ) -> None:
 

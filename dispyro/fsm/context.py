@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from .storages import StateStorage, StorageKey
 
@@ -27,7 +29,7 @@ class FSMContext:
         """Return the current state string, or None if no state is set."""
         return await self.storage.get(self.key)
 
-    async def set(self, state: Union["State", str, None]) -> None:
+    async def set(self, state: State | str | None) -> None:
         """Set the current state. Pass None to clear."""
         if state is None:
             await self.storage.clear(self.key)

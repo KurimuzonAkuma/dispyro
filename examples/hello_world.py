@@ -9,7 +9,7 @@ router.message.filter(filters.me)  # processing only messages from account itsel
 
 
 @router.message(filters.command("ping", prefixes="."))
-async def handler(_, message: types.Message):
+async def handler(_: Client, message: types.Message):
     await message.edit_text(text="🏓 pong!")
 
 

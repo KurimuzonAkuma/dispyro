@@ -1,15 +1,16 @@
 from collections import defaultdict
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
-from typing import Any, AsyncGenerator, Dict
+from typing import Any
 
 from pyrogram import Client
 
 import dispyro
+from dispyro.enums import MiddlewareState
 
-from ..enums import MiddlewareState
 from .union_types import Update
 
-MiddlewaresContext = Dict["dispyro.middlewares.BaseMiddleware", "MiddlewareContext"]
+MiddlewaresContext = dict["dispyro.middlewares.BaseMiddleware", "MiddlewareContext"]
 
 
 @dataclass
@@ -22,7 +23,7 @@ class MiddlewareContext:
 class UpdateContext:
     client: Client
     update: Update
-    data: Dict[str, Any]
+    data: dict[str, Any]
     _middlewares_context: MiddlewaresContext = field(default_factory=lambda: defaultdict(MiddlewareContext))
     # Indicates whether any handler was triggered during processing of this
     # specific update. Stored here (not on Handler/Router instances) to avoid

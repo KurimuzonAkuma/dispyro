@@ -1,8 +1,9 @@
 import contextlib
-from typing import Any, AsyncGenerator, Callable, cast
+from collections.abc import AsyncGenerator, Callable
+from typing import Any, cast
 
-from ..types.contexts import UpdateContext
-from ..enums import MiddlewareState
+from dispyro.enums import MiddlewareState
+from dispyro.types.contexts import UpdateContext
 
 MiddlewareCallable = Callable[[UpdateContext], AsyncGenerator[Any, Any]]
 
@@ -18,19 +19,19 @@ class BaseMiddleware:
         else:
             if not enter_defined:
 
-                async def enter(_):
+                async def enter(_: UpdateContext) -> None:
                     pass
 
                 self.enter = enter
 
             if not exit_defined:
 
-                async def exit(_):
+                async def exit(_: UpdateContext) -> None:
                     pass
 
                 self.exit = exit
 
-            async def apply(context: UpdateContext):
+            async def apply(context: UpdateContext) -> AsyncGenerator[None, None]:
                 await self.enter(context)
                 yield
                 await self.exit(context)
@@ -50,7 +51,7 @@ class BaseMiddleware:
 
         elif state is MiddlewareState.CALLED_ENTER:
             with contextlib.suppress(StopAsyncIteration):
-                iterable = cast(AsyncGenerator[Any, Any], middleware_context.iterable)
+                iterable = cast("AsyncGenerator[Any, Any]", middleware_context.iterable)
                 await anext(iterable)
 
             middleware_context.state = MiddlewareState.CALLED_EXIT

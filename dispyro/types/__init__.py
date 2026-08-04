@@ -6,7 +6,7 @@ __all__ = (
     "AnyFilter",
     "Callback",
     "Handler",
-    "Update",
     "PackedRawUpdate",
+    "Update",
     "signatures",
 )

@@ -1,15 +1,13 @@
-from typing import List, Optional
-
 from .filters import Filter
 from .middlewares import BaseMiddleware
 from .types import AnyFilter
 
 
 class ProcessingContextHolder:
-    def __init__(self, filters: Optional[AnyFilter] = None):
+    def __init__(self, filters: AnyFilter | None = None) -> None:
         self.filters = Filter() & filters if filters else Filter()
-        self.middlewares: List[BaseMiddleware] = []
-        self.outer_middlewares: List[BaseMiddleware] = []
+        self.middlewares: list[BaseMiddleware] = []
+        self.outer_middlewares: list[BaseMiddleware] = []
 
     def filter(self, filter: AnyFilter) -> None:
         self.filters &= filter
