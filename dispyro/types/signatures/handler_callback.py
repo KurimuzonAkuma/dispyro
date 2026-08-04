@@ -15,7 +15,7 @@ from pyrogram.types import (
 )
 from typing_extensions import ParamSpec
 
-import dispyro
+from dispyro.types.packed_raw_update import PackedRawUpdate
 
 Callback = Callable[..., Any]
 Decorator = Callable[[Callback], Callback]
@@ -30,5 +30,5 @@ EditedMessageHandlerCallback = Callable[Concatenate[Client, Message, P], Any]
 InlineQueryHandlerCallback = Callable[Concatenate[Client, InlineQuery, P], Any]
 MessageHandlerCallback = Callable[Concatenate[Client, Message, P], Any]
 PollHandlerCallback = Callable[Concatenate[Client, Poll, P], Any]
-RawUpdateHandlerCallback = Callable[Concatenate[Client, dispyro.types.PackedRawUpdate, P], Any]
+RawUpdateHandlerCallback = Callable[Concatenate[Client, PackedRawUpdate, P], Any]
 UserStatusHandlerCallback = Callable[Concatenate[Client, User, P], Any]
