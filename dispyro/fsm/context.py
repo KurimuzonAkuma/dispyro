@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .storages import StateStorage, StorageKey
 
 if TYPE_CHECKING:
-    from .states import State
+    from .state import State
 
 
 @dataclass
@@ -39,3 +39,18 @@ class FSMContext:
     async def clear(self) -> None:
         """Clear the current state (alias for set(None))."""
         await self.storage.clear(self.key)
+
+    async def get_data(self) -> dict[str, Any]:
+        """Return the current context data."""
+        return await self.storage.get_data(self.key)
+
+    async def set_data(self, data: dict[str, Any]) -> None:
+        """Set the current context data."""
+        await self.storage.set_data(self.key, data)
+
+    async def update_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Update the current context data with new values."""
+        data = await self.get_data()
+        data.update(kwargs)
+        await self.set_data(data)
+        return data

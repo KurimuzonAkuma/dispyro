@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
 
-def resolve_storage_key(chat_id: int | None, user_id: int, strategy: FSMStrategy) -> StorageKey:
+def resolve_storage_key(chat_id: int | None, user_id: int, thread_id: int | None, strategy: FSMStrategy) -> StorageKey:
     if chat_id is None:
         chat_id = user_id
 
@@ -36,6 +36,12 @@ def resolve_storage_key(chat_id: int | None, user_id: int, strategy: FSMStrategy
     if strategy == FSMStrategy.GLOBAL_USER:
         return StorageKey(chat_id=user_id, user_id=user_id)
 
+    if strategy == FSMStrategy.USER_IN_TOPIC:
+        return StorageKey(chat_id=chat_id, user_id=user_id, thread_id=thread_id)
+
+    if strategy == FSMStrategy.CHAT_TOPIC:
+        return StorageKey(chat_id=chat_id, user_id=chat_id, thread_id=thread_id)
+
     return StorageKey(chat_id=chat_id, user_id=user_id)
 
 
@@ -45,25 +51,28 @@ def extract_key(update: Update, strategy: FSMStrategy) -> StorageKey | None:
     """
 
     key = None
+    thread_id = getattr(update, "message_thread_id", None)
 
     if isinstance(update, Message):
         if update.from_user is None:
             return None
 
-        key = resolve_storage_key(update.chat.id, update.from_user.id, strategy)
+        key = resolve_storage_key(update.chat.id, update.from_user.id, thread_id, strategy)
 
     elif isinstance(update, CallbackQuery):
         chat_id = update.message.chat.id if update.message else None
-        key = resolve_storage_key(chat_id, update.from_user.id, strategy)
+        if update.message:
+            thread_id = getattr(update.message, "message_thread_id", None)
+        key = resolve_storage_key(chat_id, update.from_user.id, thread_id, strategy)
 
     elif isinstance(update, ChatMemberUpdated):
-        key = resolve_storage_key(update.chat.id, update.new_chat_member.user.id, strategy)
+        key = resolve_storage_key(update.chat.id, update.new_chat_member.user.id, thread_id, strategy)
 
     elif isinstance(update, (InlineQuery, ChosenInlineResult)):
-        key = resolve_storage_key(None, update.from_user.id, strategy)
+        key = resolve_storage_key(None, update.from_user.id, thread_id, strategy)
 
     elif isinstance(update, User):
-        key = resolve_storage_key(None, update.id, strategy)
+        key = resolve_storage_key(None, update.id, thread_id, strategy)
 
     return key
 

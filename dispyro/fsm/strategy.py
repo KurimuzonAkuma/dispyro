@@ -14,3 +14,5 @@ class FSMStrategy(Enum):
     USER_IN_CHAT = auto()
     GLOBAL_USER = auto()
     CHAT_ONLY = auto()
+    USER_IN_TOPIC = auto()
+    CHAT_TOPIC = auto()

@@ -158,7 +158,7 @@ class Dispatcher:
 
     async def feed_update(self, client: Client, update: Update, handler_type: type[PyrogramHandler]) -> None:
         processing_context = self.processing_context_correlation[handler_type]
-        context = UpdateContext(client=client, update=update, data=self._deps)
+        context = UpdateContext(client=client, update=update, data=self._deps.copy())
 
         for middleware in processing_context.outer_middlewares:
             await middleware.handle(context=context)

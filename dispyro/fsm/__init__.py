@@ -4,7 +4,7 @@ import contextlib
 from .context import FSMContext
 from .filters import StateFilter
 from .middleware import FSMMiddleware, extract_key, resolve_storage_key
-from .states import State, StatesGroup
+from .state import State, StatesGroup
 from .storages import MemoryStorage, StateStorage, StorageKey
 from .strategy import FSMStrategy
 

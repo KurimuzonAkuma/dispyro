@@ -2,7 +2,7 @@ from dispyro.filters import Filter
 from dispyro.types.contexts import UpdateContext
 
 from .context import FSMContext
-from .states import State
+from .state import State
 
 
 class StateFilter(Filter):
