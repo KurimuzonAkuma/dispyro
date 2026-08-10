@@ -48,9 +48,11 @@ class FSMContext:
         """Set the current context data."""
         await self.storage.set_data(self.key, data)
 
-    async def update_data(self, **kwargs: Any) -> dict[str, Any]:
+    async def update_data(self, data: dict[str, Any] | None = None, **kwargs: Any) -> dict[str, Any]:
         """Update the current context data with new values."""
-        data = await self.get_data()
-        data.update(kwargs)
-        await self.set_data(data)
-        return data
+        current_data = await self.get_data()
+        if data is not None:
+            current_data.update(data)
+        current_data.update(kwargs)
+        await self.set_data(current_data)
+        return current_data
